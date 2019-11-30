@@ -14,18 +14,19 @@
 import React from 'react';
 // import './App.css';
 
+// App Component
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>
-          Clock
-        </h1>
+        <h1>Clock</h1>
+        <hr />
         <ul>
           <li><a className="App-link" href="#">Alarm</a></li>
           <li><a className="App-link" href="#">Stopwatch</a></li>
           <li><a className="App-link" href="#">Timer</a></li>
         </ul>
+        <hr />
       </header>
 
       <div>
@@ -37,7 +38,8 @@ function App() {
 
 export default App;
 
-
+// Timer Component
+// - Parent component
 class Timer extends React.Component {
   render() {
     return (
@@ -52,6 +54,8 @@ class Timer extends React.Component {
   }
 }
 
+// TimerDuration Component
+// - Pick duration
 class TimerDuration extends React.Component {
   render() {
     return (
@@ -64,6 +68,11 @@ class TimerDuration extends React.Component {
   }
 }
 
+// TimerClock Component
+// - Clock face
+// - Time remaining
+// - End time
+// - Progress indicator (time remaining / duration)
 class TimerClock extends React.Component {
   render() {
     return (
@@ -78,6 +87,9 @@ class TimerClock extends React.Component {
   }
 }
 
+// TimerControl Component
+// - Cancel
+// - Start/Pause/Resume
 class TimerControl extends React.Component {
   render() {
     return (
@@ -90,6 +102,8 @@ class TimerControl extends React.Component {
   }
 }
 
+// TimerAlarm Component
+// - Pick alarm sound
 class TimerAlarm extends React.Component {
   render() {
     return (
