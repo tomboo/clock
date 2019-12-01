@@ -38,16 +38,84 @@ function App() {
 
 export default App;
 
+
+const STATE_INIT = 1;
+const STATE_RUN = 2;
+const STATE_PAUSE = 3;
+const STATE_FINISH = 4;   // sound alarm
+const STATE_ERROR = 5;
+
+const INPUT_CANCEL = 11;
+const INPUT_START = 12;
+const INPUT_PAUSE = 13;
+const INPUT_RESUME = 14;
+const INPUT_DONE = 15;       // timer finished
+
+
 // Timer Component
 // - Parent component
 class Timer extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      timerState: STATE_INIT
+    };
+  }
+
+  handleInput(input) {
+    let nextState = null;
+    switch (input) {
+      case INPUT_CANCEL:
+        // clearInterval
+        nextState = STATE_INIT;
+        break;
+      case INPUT_START:
+        // setInterval
+        nextState = STATE_RUN;
+        break;
+      case INPUT_PAUSE:
+        // clearInterval
+        nextState = STATE_PAUSE;
+        break;
+      case INPUT_RESUME:
+        // setInterval
+        nextState = STATE_RUN;
+        break;
+      case INPUT_DONE:
+        // clearInterval
+        nextState = STATE_FINISH;
+        break;
+      default:
+        // clearInterval
+        nextState = STATE_ERROR;
+        break;
+    };
+
+    this.setState({
+      timerState: nextState
+    });
+  }
+
   render() {
+    const isStateInit = (this.state.timerState === STATE_INIT);
+
     return (
       <div>
         <h2>Timer</h2>
-        <TimerDuration duration={this.props.duration}/>
-        <TimerClock duration={this.props.duration} />
-        <TimerControl />
+        <p>timerState: {this.state.timerState}</p>
+
+        {/* Conditional Rendering */}
+        { isStateInit ? (
+          <TimerDuration duration={this.props.duration}/>
+        ) : (
+          <TimerClock duration={this.props.duration} />
+        )}
+
+        <TimerControl
+          timerState={this.state.timerState}
+          onClick={input => this.handleInput(input)}
+        />
+
         <TimerAlarm alarm={this.props.alarm} />
       </div>
     );
@@ -61,7 +129,7 @@ class TimerDuration extends React.Component {
     return (
       <div>
         <h3>Timer Duration</h3>
-        <p>{this.props.duration}</p>
+        <p>duration: {this.props.duration}</p>
         <p>0 hours - 25 minutes - 0 seconds</p>
       </div>
     );
@@ -78,7 +146,7 @@ class TimerClock extends React.Component {
     return (
       <div>
         <h3>Timer Clock</h3>
-        <p>{this.props.duration}</p>
+        <p>duration: {this.props.duration}</p>
         <p>Time Remaining: 25:00</p>
         <p>End Time: 9:00 AM</p>
         <p>Progress: Time Remaining / Timer Duration</p>
@@ -92,11 +160,48 @@ class TimerClock extends React.Component {
 // - Start/Pause/Resume
 class TimerControl extends React.Component {
   render() {
+    const timerState = this.props.timerState;
+    const disabled = (timerState === STATE_INIT);
+
+    let buttonLabel = null;
+    let buttonAction = null;
+
+    switch (timerState){
+      case STATE_INIT:
+        buttonLabel = 'Start';
+        buttonAction = INPUT_START;
+        break;
+      case STATE_RUN:
+        buttonLabel = 'Pause';
+        buttonAction = INPUT_PAUSE;
+        break;
+      case STATE_PAUSE:
+        buttonLabel = 'Resume';
+        buttonAction = INPUT_RESUME;
+        break;
+      case STATE_FINISH:
+        buttonLabel = 'Start';
+        buttonAction = INPUT_START;
+        break;
+      default:
+        buttonLabel = 'ERROR';
+        buttonAction = INPUT_START;
+        break;
+    };
+
     return (
       <div>
         <h3>Timer Control</h3>
-        <button>Cancel</button>
-        <button>Start/Pause/Resume</button>
+        <p>timerState: {timerState}</p>
+        <button
+          onClick={() => this.props.onClick(INPUT_CANCEL)}
+          disabled={disabled}>
+            Cancel
+        </button>
+        <button
+          onClick={() => this.props.onClick(buttonAction)}>
+            {buttonLabel}
+        </button>
       </div>
     );
   }
@@ -109,7 +214,7 @@ class TimerAlarm extends React.Component {
     return (
       <div>
         <h3>Timer Alarm</h3>
-        <p>{this.props.alarm}</p>
+        <p>alarm: {this.props.alarm}</p>
         <p>When Timer Ends</p>
         <p>List of Alarm Sounds</p>
       </div>
