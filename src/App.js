@@ -30,7 +30,7 @@ function App() {
       </header>
 
       <div>
-        <Timer duration="25" alarm="Radar"/>
+        <Timer />
       </div>
     </div>
   );
@@ -39,17 +39,16 @@ function App() {
 export default App;
 
 
-const STATE_INIT = 1;
-const STATE_RUN = 2;
-const STATE_PAUSE = 3;
-const STATE_FINISH = 4;   // sound alarm
-const STATE_ERROR = 5;
+const STATE_INIT = 'initial';
+const STATE_RUN = 'run';
+const STATE_PAUSE = 'pause';
+const STATE_FINISH = 'finish';   // sound alarm
 
-const INPUT_CANCEL = 11;
-const INPUT_START = 12;
-const INPUT_PAUSE = 13;
-const INPUT_RESUME = 14;
-const INPUT_DONE = 15;       // timer finished
+const INPUT_CANCEL = 'cancel';
+const INPUT_START = 'start';
+const INPUT_PAUSE = 'pause';
+const INPUT_RESUME = 'resume';
+const INPUT_DONE = 'done';       // timer finished
 
 
 // Timer Component
@@ -58,8 +57,36 @@ class Timer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      timerState: STATE_INIT
+      timerState: STATE_INIT,
+      sessionLength: 25,
+      alarm: "Radar"
     };
+    this.reset = this.reset.bind(this);
+    this.setSessionLength = this.setSessionLength.bind(this);
+    this.handleInput = this.handleInput.bind(this);
+  }
+
+  reset() {
+    this.setState({
+      timerState: STATE_INIT,
+      sessionLength: 25
+    });
+  }
+
+  setSessionLength(e) {
+    if (this.state.timerState !== STATE_INIT) return;
+
+    let increment = 1;
+    if (e.currentTarget.value === "-") {
+      increment = -1;
+    }
+
+    let newLength = this.state.sessionLength + increment;
+    if (0 < newLength && newLength <= 60) {
+      this.setState({
+        sessionLength: newLength
+      });  
+    }
   }
 
   handleInput(input) {
@@ -87,7 +114,7 @@ class Timer extends React.Component {
         break;
       default:
         // clearInterval
-        nextState = STATE_ERROR;
+        nextState = STATE_INIT;
         break;
     };
 
@@ -106,9 +133,12 @@ class Timer extends React.Component {
 
         {/* Conditional Rendering */}
         { isStateInit ? (
-          <TimerDuration duration={this.props.duration}/>
+          <TimerLengthControl
+            title="Session Length"
+            length={this.state.sessionLength}
+            onClick={this.setSessionLength} />
         ) : (
-          <TimerClock duration={this.props.duration} />
+          <TimerClock sessionLength={this.state.sessionLength} />
         )}
 
         <TimerControl
@@ -116,23 +146,34 @@ class Timer extends React.Component {
           onClick={input => this.handleInput(input)}
         />
 
-        <TimerAlarm alarm={this.props.alarm} />
+        <TimerAlarm alarm={this.state.alarm} />
       </div>
     );
   }
 }
 
-// TimerDuration Component
-// - Pick duration
-class TimerDuration extends React.Component {
+// TimerLengthControl Component
+// - props.title
+// - props.length
+// - props.onClick
+class TimerLengthControl extends React.Component {
   render() {
     return (
       <div>
-        <h3>Timer Duration</h3>
-        <p>duration: {this.props.duration}</p>
-        <p>0 hours - 25 minutes - 0 seconds</p>
-      </div>
-    );
+        <h3>{this.props.title}</h3>
+        <button
+          onClick={this.props.onClick}
+          value="-">
+            -
+        </button>
+        <div>{this.props.length}</div>
+        <button
+          onClick={this.props.onClick}
+          value="+">
+            +
+        </button>
+      </div>  
+    )
   }
 }
 
@@ -140,16 +181,16 @@ class TimerDuration extends React.Component {
 // - Clock face
 // - Time remaining
 // - End time
-// - Progress indicator (time remaining / duration)
+// - Progress indicator (time remaining / sessionLength)
 class TimerClock extends React.Component {
   render() {
     return (
       <div>
         <h3>Timer Clock</h3>
-        <p>duration: {this.props.duration}</p>
+        <p>sessionLength: {this.props.sessionLength}</p>
         <p>Time Remaining: 25:00</p>
         <p>End Time: 9:00 AM</p>
-        <p>Progress: Time Remaining / Timer Duration</p>
+        <p>Progress: Time Remaining / sessionLength</p>
       </div>
     );
   }
