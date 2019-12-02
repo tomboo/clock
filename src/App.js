@@ -9,7 +9,19 @@
 // [ ] Step 4: Identify Where Your State Should Live
 // [ ] Step 5: Add Inverse Data Flow
 
+/** NOTES:
+/** Dependencies are React, ReactDOM, and 
+    Accurate_Interval.js by Squuege (external script 
+    to keep setInterval() from drifting over time & 
+    thus ensuring timer goes off at correct mark).
+/** Utilizes embedded <Audio> tag to ensure audio 
+    plays when timer tab is inactive or browser is 
+    minimized ( rather than new Audio().play() ).
+/** Audio of this fashion not supported on most 
+    mobile devices it would seem (bummer I know).
+**/
 
+// TODO: Switch from setInterval to Accurate_Interval
 
 import React from 'react';
 // import './App.css';
@@ -38,17 +50,17 @@ function App() {
 
 export default App;
 
+// TODO: Review State Design Pattern
 
-const STATE_INIT = 'initial';
-const STATE_RUN = 'run';
-const STATE_PAUSE = 'pause';
-const STATE_FINISH = 'finish';   // sound alarm
+const STATE_INIT    = 'initial';
+const STATE_RUN     = 'run';
+const STATE_PAUSE   = 'pause';
 
-const INPUT_CANCEL = 'cancel';
-const INPUT_START = 'start';
-const INPUT_PAUSE = 'pause';
-const INPUT_RESUME = 'resume';
-const INPUT_DONE = 'done';       // timer finished
+const INPUT_CANCEL  = 'cancel';
+const INPUT_START   = 'start';
+const INPUT_PAUSE   = 'pause';
+const INPUT_RESUME  = 'resume';
+const INPUT_TICK    = 'tick';
 
 
 // Timer Component
@@ -56,24 +68,18 @@ const INPUT_DONE = 'done';       // timer finished
 class Timer extends React.Component {
   constructor(props) {
     super(props);
+    let sessionLength = 1;  // TODO: Add default session length to settings
     this.state = {
       timerState: STATE_INIT,
-      sessionLength: 25,
-      timer: 25 * 60,       // time remaining
-      intervalID: 0,
+      sessionLength: sessionLength,
+      timer: sessionLength * 60,       // time remaining
+      timerID: 0,
       alarm: "Radar"
     };
-    this.reset = this.reset.bind(this);
     this.setSessionLength = this.setSessionLength.bind(this);
-    this.tick = this.tick.bind(this);
+    this.startTimer = this.startTimer.bind(this);
+    this.stopTimer = this.stopTimer.bind(this);
     this.handleInput = this.handleInput.bind(this);
-  }
-
-  reset() {
-    this.setState({
-      timerState: STATE_INIT,
-      sessionLength: 25
-    });
   }
 
   setSessionLength(e) {
@@ -93,55 +99,63 @@ class Timer extends React.Component {
     }
   }
 
-  tick() {
-    let newTimer = this.state.timer - 1;
-    this.setState({
-      timer: newTimer
-    });
+  startTimer() {
+    return setInterval(() => this.handleInput(INPUT_TICK), 1000);
+  }
+
+  stopTimer(timerID) {
+    if (timerID) {
+      clearInterval(timerID);
+    }
+    return 0;
   }
 
   handleInput(input) {
     let timer = this.state.timer;
-    let intervalID = this.state.intervalID;
-    let nextState = null;
+    let timerID = this.state.timerID;
+    let timerState = this.state.timerState;
 
     switch (input) {
       case INPUT_CANCEL:
         timer = this.state.sessionLength * 60;
-        if (intervalID) {
-          clearInterval(intervalID);
-        }
-        intervalID = 0;
-        nextState = STATE_INIT;
+        timerID = this.stopTimer(timerID);
+        timerState = STATE_INIT;
         break;
       case INPUT_START:
         timer = this.state.sessionLength * 60;
-        intervalID = setInterval(this.tick, 1000);
-        nextState = STATE_RUN;
+        timerID = this.startTimer();
+        timerState = STATE_RUN;
         break;
       case INPUT_PAUSE:
-        if (this.state.intervalID) {
-          clearInterval(this.state.intervalID);
-        }
-        intervalID = 0;
-        nextState = STATE_PAUSE;
+        timerID = this.stopTimer(timerID);
+        timerState = STATE_PAUSE;
         break;
       case INPUT_RESUME:
-        intervalID = setInterval(this.tick, 1000);
-        nextState = STATE_RUN;
+        timerID = this.startTimer();
+        timerState = STATE_RUN;
         break;
-      case INPUT_DONE:
-        nextState = STATE_FINISH;
+      case INPUT_TICK:
+        timer = timer - 1;
+        // TODO: switch to red timer when timer reaches n minutes
+        if (timer <= 0) {
+          timer = 0;
+          timerID = this.stopTimer(timerID);
+          timerState = STATE_INIT;
+
+          // TODO: Timer should display zero before sounding alarm
+          // TODO: Sound alarm
+          console.log('*** SOUND ALARM ***');
+        }
         break;
       default:
-        nextState = STATE_INIT;
+        timerState = STATE_INIT;
         break;
     };
 
     this.setState({
       timer: timer,
-      intervalID: intervalID,
-      timerState: nextState
+      timerID: timerID,
+      timerState: timerState
     });
   }
 
@@ -183,6 +197,7 @@ class Timer extends React.Component {
 // - props.length
 // - props.onClick
 class TimerLengthControl extends React.Component {
+  // TODO: Disable buttons when not STATE_INIT
   render() {
     return (
       <div>
@@ -251,13 +266,9 @@ class TimerControl extends React.Component {
         buttonLabel = 'Resume';
         buttonAction = INPUT_RESUME;
         break;
-      case STATE_FINISH:
-        buttonLabel = 'Start';
-        buttonAction = INPUT_START;
-        break;
       default:
         buttonLabel = 'ERROR';
-        buttonAction = INPUT_START;
+        buttonAction = INPUT_CANCEL;
         break;
     };
 
