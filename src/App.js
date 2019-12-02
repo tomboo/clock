@@ -59,10 +59,13 @@ class Timer extends React.Component {
     this.state = {
       timerState: STATE_INIT,
       sessionLength: 25,
+      timer: 25 * 60,       // time remaining
+      intervalID: 0,
       alarm: "Radar"
     };
     this.reset = this.reset.bind(this);
     this.setSessionLength = this.setSessionLength.bind(this);
+    this.tick = this.tick.bind(this);
     this.handleInput = this.handleInput.bind(this);
   }
 
@@ -84,41 +87,60 @@ class Timer extends React.Component {
     let newLength = this.state.sessionLength + increment;
     if (0 < newLength && newLength <= 60) {
       this.setState({
-        sessionLength: newLength
+        sessionLength: newLength,
+        timer: newLength * 60
       });  
     }
   }
 
+  tick() {
+    let newTimer = this.state.timer - 1;
+    this.setState({
+      timer: newTimer
+    });
+  }
+
   handleInput(input) {
+    let timer = this.state.timer;
+    let intervalID = this.state.intervalID;
     let nextState = null;
+
     switch (input) {
       case INPUT_CANCEL:
-        // clearInterval
+        timer = this.state.sessionLength * 60;
+        if (intervalID) {
+          clearInterval(intervalID);
+        }
+        intervalID = 0;
         nextState = STATE_INIT;
         break;
       case INPUT_START:
-        // setInterval
+        timer = this.state.sessionLength * 60;
+        intervalID = setInterval(this.tick, 1000);
         nextState = STATE_RUN;
         break;
       case INPUT_PAUSE:
-        // clearInterval
+        if (this.state.intervalID) {
+          clearInterval(this.state.intervalID);
+        }
+        intervalID = 0;
         nextState = STATE_PAUSE;
         break;
       case INPUT_RESUME:
-        // setInterval
+        intervalID = setInterval(this.tick, 1000);
         nextState = STATE_RUN;
         break;
       case INPUT_DONE:
-        // clearInterval
         nextState = STATE_FINISH;
         break;
       default:
-        // clearInterval
         nextState = STATE_INIT;
         break;
     };
 
     this.setState({
+      timer: timer,
+      intervalID: intervalID,
       timerState: nextState
     });
   }
@@ -132,14 +154,18 @@ class Timer extends React.Component {
         <p>timerState: {this.state.timerState}</p>
 
         {/* Conditional Rendering */}
-        { isStateInit ? (
+        {/* { isStateInit ? ( */}
           <TimerLengthControl
             title="Session Length"
             length={this.state.sessionLength}
-            onClick={this.setSessionLength} />
-        ) : (
-          <TimerClock sessionLength={this.state.sessionLength} />
-        )}
+            onClick={this.setSessionLength}
+          />
+        {/* ) : ( */}
+          <TimerClock
+            sessionLength={this.state.sessionLength}
+            timer={this.state.timer}
+          />
+        {/* )} */}
 
         <TimerControl
           timerState={this.state.timerState}
@@ -178,20 +204,25 @@ class TimerLengthControl extends React.Component {
 }
 
 // TimerClock Component
+// - props.sessionLength (minutes)
+// - props.timer (seconds)
+//
 // - Clock face
-// - Time remaining
-// - End time
-// - Progress indicator (time remaining / sessionLength)
+// - TODO: Format time remaining (min:sec)
+// - TODO: End time
+// - TODO: Progress indicator
 class TimerClock extends React.Component {
   render() {
+    let length = this.props.sessionLength * 60;
+    let progress = (length - this.props.timer) / length;
     return (
       <div>
         <h3>Timer Clock</h3>
-        <p>sessionLength: {this.props.sessionLength}</p>
-        <p>Time Remaining: 25:00</p>
+        <p>props.sessionLength: {this.props.sessionLength}</p>
+        <p>props.timer: {this.props.timer}</p>
+        <p>progress: {progress}</p>
         <p>End Time: 9:00 AM</p>
-        <p>Progress: Time Remaining / sessionLength</p>
-      </div>
+     </div>
     );
   }
 }
