@@ -225,6 +225,7 @@ class Timer extends React.Component {
           />
         {/* ) : ( */}
           <TimerClock
+            timerState={this.state.timerState}
             duration={this.state.duration}
             remaining={this.state.remaining}
             end={this.state.end}
@@ -269,6 +270,7 @@ class TimerLengthControl extends React.Component {
 }
 
 // TimerClock Component
+// - props.timerState
 // - props.duration
 // - props.remaining
 // - props.end
@@ -286,7 +288,11 @@ class TimerClock extends React.Component {
         <h3>Timer Clock</h3>
         <p>props.duration: {clockify(this.props.duration)}</p>
         <p>props.remaining: {clockify(this.props.remaining)}</p>
-        <p>end: {end.toLocaleTimeString()}</p>
+        { this.props.timerState === STATE_RUN ? (
+          <p>end: {end.toLocaleTimeString()}</p>
+        ) : (
+          <p>end:</p>
+        )}
         <p>progress: {Math.floor(progress * 100)}%</p>
      </div>
     );
