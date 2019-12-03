@@ -62,20 +62,50 @@ const INPUT_PAUSE   = 'pause';
 const INPUT_RESUME  = 'resume';
 const INPUT_TICK    = 'tick';
 
+function toSec(ms) {
+  return Math.floor(ms / 1000);
+}
+function toMin(ms) {
+  return Math.floor(ms / (60 * 1000));
+}
+function fromSec(s) {
+  return s * 1000;
+}
+function fromMin(m) {
+  return m * 60 * 1000; 
+}
+function clockify(ms) {
+  let minutes = toMin(ms);
+  let seconds = toSec(ms) - minutes * 60;
+  seconds = seconds < 10 ? '0' + seconds : seconds;
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  return minutes + ':' + seconds;
+}
 
 // Timer Component
 // - Parent component
 class Timer extends React.Component {
   constructor(props) {
     super(props);
-    let sessionLength = 1;  // TODO: Add default session length to settings
+
+    // TODO: Add duration and interval to settings
+    let duration = fromMin(1); // TODO: Set default duration to 25 mins
+    let interval = fromSec(1);
+
+    // STATE:
     this.state = {
-      timerState: STATE_INIT,
-      sessionLength: sessionLength,
-      timer: sessionLength * 60,       // time remaining
-      timerID: 0,
+      timerState: STATE_INIT,   // timer state
+      timerID: 0,               // update timer ID
+
+      interval: interval,       // update interval (mSec)
+      duration: duration,       // session length (mSec)
+      remaining: duration,      // remaining time (mSec)
+      end: 0,                   // end time (mSec - epoch time)
+
       alarm: "Radar"
     };
+
+    // BINDINGS:
     this.setSessionLength = this.setSessionLength.bind(this);
     this.startTimer = this.startTimer.bind(this);
     this.stopTimer = this.stopTimer.bind(this);
@@ -87,20 +117,39 @@ class Timer extends React.Component {
 
     let increment = 1;
     if (e.currentTarget.value === "-") {
-      increment = -1;
+      increment = -increment;
     }
 
-    let newLength = this.state.sessionLength + increment;
+    let newLength = toMin(this.state.duration) + increment;
     if (0 < newLength && newLength <= 60) {
       this.setState({
-        sessionLength: newLength,
-        timer: newLength * 60
+        duration: fromMin(newLength),
+        remaining: fromMin(newLength)
       });  
     }
   }
 
   startTimer() {
-    return setInterval(() => this.handleInput(INPUT_TICK), 1000);
+    let timerState = this.state.timerState;
+    let duration = this.state.duration;
+    let now = Date.now();
+
+    if (timerState === STATE_INIT) {
+      this.setState({
+        remaining: duration,
+        end: now + duration
+      });
+    }
+    else if (timerState === STATE_PAUSE) {
+      this.setState({
+        end: now + this.state.remaining
+      });
+    }
+    else {
+      console.log('ERROR');  // TODO: assert
+    }
+
+    return setInterval(() => this.handleInput(INPUT_TICK), this.state.interval);
   }
 
   stopTimer(timerID) {
@@ -111,18 +160,18 @@ class Timer extends React.Component {
   }
 
   handleInput(input) {
-    let timer = this.state.timer;
+    let remaining = this.state.remaining;
     let timerID = this.state.timerID;
     let timerState = this.state.timerState;
 
     switch (input) {
       case INPUT_CANCEL:
-        timer = this.state.sessionLength * 60;
+        remaining = this.state.duration;
         timerID = this.stopTimer(timerID);
         timerState = STATE_INIT;
         break;
       case INPUT_START:
-        timer = this.state.sessionLength * 60;
+        remaining = this.state.duration;
         timerID = this.startTimer();
         timerState = STATE_RUN;
         break;
@@ -135,10 +184,10 @@ class Timer extends React.Component {
         timerState = STATE_RUN;
         break;
       case INPUT_TICK:
-        timer = timer - 1;
-        // TODO: switch to red timer when timer reaches n minutes
-        if (timer <= 0) {
-          timer = 0;
+        remaining = this.state.end - Date.now();
+        // TODO: switch to red timer when remaining reaches n minutes
+        if (remaining <= 0) {
+          remaining = 0;
           timerID = this.stopTimer(timerID);
           timerState = STATE_INIT;
 
@@ -153,7 +202,7 @@ class Timer extends React.Component {
     };
 
     this.setState({
-      timer: timer,
+      remaining: remaining,
       timerID: timerID,
       timerState: timerState
     });
@@ -171,13 +220,14 @@ class Timer extends React.Component {
         {/* { isStateInit ? ( */}
           <TimerLengthControl
             title="Session Length"
-            length={this.state.sessionLength}
+            duration={this.state.duration}
             onClick={this.setSessionLength}
           />
         {/* ) : ( */}
           <TimerClock
-            sessionLength={this.state.sessionLength}
-            timer={this.state.timer}
+            duration={this.state.duration}
+            remaining={this.state.remaining}
+            end={this.state.end}
           />
         {/* )} */}
 
@@ -194,7 +244,7 @@ class Timer extends React.Component {
 
 // TimerLengthControl Component
 // - props.title
-// - props.length
+// - props.duration
 // - props.onClick
 class TimerLengthControl extends React.Component {
   // TODO: Disable buttons when not STATE_INIT
@@ -207,7 +257,7 @@ class TimerLengthControl extends React.Component {
           value="-">
             -
         </button>
-        <div>{this.props.length}</div>
+        <div>{toMin(this.props.duration)} minutes</div>
         <button
           onClick={this.props.onClick}
           value="+">
@@ -219,8 +269,9 @@ class TimerLengthControl extends React.Component {
 }
 
 // TimerClock Component
-// - props.sessionLength (minutes)
-// - props.timer (seconds)
+// - props.duration
+// - props.remaining
+// - props.end
 //
 // - Clock face
 // - TODO: Format time remaining (min:sec)
@@ -228,15 +279,15 @@ class TimerLengthControl extends React.Component {
 // - TODO: Progress indicator
 class TimerClock extends React.Component {
   render() {
-    let length = this.props.sessionLength * 60;
-    let progress = (length - this.props.timer) / length;
+    const end = new Date(this.props.end);
+    const progress = (this.props.duration - this.props.remaining) / this.props.duration;
     return (
       <div>
         <h3>Timer Clock</h3>
-        <p>props.sessionLength: {this.props.sessionLength}</p>
-        <p>props.timer: {this.props.timer}</p>
-        <p>progress: {progress}</p>
-        <p>End Time: 9:00 AM</p>
+        <p>props.duration: {clockify(this.props.duration)}</p>
+        <p>props.remaining: {clockify(this.props.remaining)}</p>
+        <p>end: {end.toLocaleTimeString()}</p>
+        <p>progress: {Math.floor(progress * 100)}%</p>
      </div>
     );
   }
