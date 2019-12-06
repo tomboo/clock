@@ -82,6 +82,7 @@ function clockify(ms) {
   return minutes + ':' + seconds;
 }
 
+
 // Timer Component
 // - Parent component
 class Timer extends React.Component {
@@ -209,39 +210,68 @@ class Timer extends React.Component {
   }
 
   render() {
-    const isStateInit = (this.state.timerState === STATE_INIT);
-
     return (
-      <div>
-        <h2>Timer</h2>
+      <div className="container">
         <p>timerState: {this.state.timerState}</p>
 
-        {/* Conditional Rendering */}
-        {/* { isStateInit ? ( */}
-          <TimerLengthControl
-            title="Session Length"
-            duration={this.state.duration}
-            onClick={this.setSessionLength}
-          />
-        {/* ) : ( */}
-          <TimerClock
-            timerState={this.state.timerState}
-            duration={this.state.duration}
-            remaining={this.state.remaining}
-            end={this.state.end}
-          />
-        {/* )} */}
+        {/* Title */}
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <h2 className="text-primary">Pomodoro Clock</h2>
+          </div>
+        </div>
 
-        <TimerControl
-          timerState={this.state.timerState}
-          onClick={input => this.handleInput(input)}
-        />
+        {/* Timer Length Controls */}
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <TimerLengthControl
+              title="Session Length"
+              duration={this.state.duration}
+              onClick={this.setSessionLength}
+            />
+          </div>
+          <div className="col-auto">
+            <TimerLengthControl
+              title="Break Length"
+              duration="5"
+              onClick={this.setSessionLength}
+            />
+          </div>
+        </div>
 
-        <TimerAlarm alarm={this.state.alarm} />
+        {/* Clock Face */}
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <TimerClock
+              timerState={this.state.timerState}
+              duration={this.state.duration}
+              remaining={this.state.remaining}
+              end={this.state.end}
+            />
+          </div>
+        </div>
+
+        {/* Clock Face */}
+        <div className="row justify-content-center">
+          <div className="col-auto"> 
+            <TimerControl
+              timerState={this.state.timerState}
+              onClick={input => this.handleInput(input)}
+            />
+          </div>
+        </div>
+
+        {/* Alarm Control */}
+        <div className="row justify-content-center">
+          <div className="col-auto"> 
+            <TimerAlarm alarm={this.state.alarm} />
+          </div>
+        </div>
       </div>
     );
   }
 }
+
 
 // TimerLengthControl Component
 // - props.title
@@ -251,19 +281,32 @@ class TimerLengthControl extends React.Component {
   // TODO: Disable buttons when not STATE_INIT
   render() {
     return (
-      <div>
-        <h3>{this.props.title}</h3>
-        <button
-          onClick={this.props.onClick}
-          value="-">
-            -
-        </button>
-        <div>{toMin(this.props.duration)} minutes</div>
-        <button
-          onClick={this.props.onClick}
-          value="+">
-            +
-        </button>
+      <div> 
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <h3 className="text-primary">{this.props.title}</h3>
+          </div>
+        </div>
+
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <button className="btn btn-secondary"
+              onClick={this.props.onClick}
+              value="-">
+                -
+            </button>
+
+            <button className="btn btn-primary">
+              {toMin(this.props.duration)}
+            </button>
+
+            <button className="btn btn-secondary"
+              onClick={this.props.onClick}
+              value="+">
+                + <i className="fa fa-arrow-up fa-2x"/>
+            </button>
+          </div>
+        </div>
       </div>  
     )
   }
@@ -285,7 +328,7 @@ class TimerClock extends React.Component {
     const progress = (this.props.duration - this.props.remaining) / this.props.duration;
     return (
       <div>
-        <h3>Timer Clock</h3>
+        <h3 className="text-primary text-center">Session</h3>
         <p>props.duration: {clockify(this.props.duration)}</p>
         <p>props.remaining: {clockify(this.props.remaining)}</p>
         { this.props.timerState === STATE_RUN ? (
@@ -331,17 +374,19 @@ class TimerControl extends React.Component {
 
     return (
       <div>
-        <h3>Timer Control</h3>
-        <p>timerState: {timerState}</p>
-        <button
-          onClick={() => this.props.onClick(INPUT_CANCEL)}
-          disabled={disabled}>
-            Cancel
-        </button>
-        <button
-          onClick={() => this.props.onClick(buttonAction)}>
-            {buttonLabel}
-        </button>
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <button className="btn btn-danger"
+              onClick={() => this.props.onClick(INPUT_CANCEL)}
+              disabled={disabled}>
+                Cancel
+            </button>
+            <button className="btn btn-primary"
+              onClick={() => this.props.onClick(buttonAction)}>
+                {buttonLabel}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -352,12 +397,13 @@ class TimerControl extends React.Component {
 class TimerAlarm extends React.Component {
   render() {
     return (
-      <div>
-        <h3>Timer Alarm</h3>
-        <p>alarm: {this.props.alarm}</p>
-        <p>When Timer Ends</p>
-        <p>List of Alarm Sounds</p>
+      <div className="row justify-content-center">
+        <div className="col-auto">
+          <label for="alarm">When Timer Ends</label>
+          <button id="alarm" className="btn btn-secondary">{this.props.alarm} ></button>
+        </div>
       </div>
+    
     );
   }
 }
