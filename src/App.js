@@ -70,6 +70,13 @@ function clockify(ms) {
   minutes = minutes < 10 ? '0' + minutes : minutes;
   return minutes + ':' + seconds;
 }
+function toPercent(n, d) {
+  return Math.floor(n / d * 100) + '%';
+}
+function toDate(ms) {
+  let date = new Date(ms);
+  return date.toLocaleTimeString();
+}
 
 
 // Timer Component
@@ -89,12 +96,13 @@ class Timer extends React.Component {
 
       interval: interval,       // update interval (mSec)
       duration: duration,       // session length (mSec)
+      elapsed: 0,               // elapsed time (mSec)
       remaining: duration,      // remaining time (mSec)
-      end: 0,                   // end time (mSec - epoch time)
+
+      start: 0,                 // started session (mSec - epoch time)
+      end: 0,                   // session ending (mSec - epoch time)
 
       alarm: "Radar",
-
-      percentage: 0
     };
 
     // BINDINGS:
@@ -102,14 +110,6 @@ class Timer extends React.Component {
     this.startTimer = this.startTimer.bind(this);
     this.stopTimer = this.stopTimer.bind(this);
     this.handleInput = this.handleInput.bind(this);
-
-    this.handleChangeEvent = this.handleChangeEvent.bind(this);
-  }
-
-  handleChangeEvent(event) {
-    this.setState({
-      percentage: event.target.value
-    });
   }
 
   setSessionLength(e) {
@@ -136,7 +136,9 @@ class Timer extends React.Component {
 
     if (timerState === STATE_INIT) {
       this.setState({
+        elapsed: 0,
         remaining: duration,
+        start: now,
         end: now + duration
       });
     }
@@ -201,13 +203,10 @@ class Timer extends React.Component {
         break;
     };
 
-    const progress = (this.state.duration - this.state.remaining) / this.state.duration;
-
     this.setState({
       remaining: remaining,
       timerID: timerID,
-      timerState: timerState,
-      percentage: Math.floor(progress * 100)
+      timerState: timerState
     });
   }
 
@@ -249,6 +248,7 @@ class Timer extends React.Component {
               timerState={this.state.timerState}
               duration={this.state.duration}
               remaining={this.state.remaining}
+              start={this.state.start}
               end={this.state.end}
             />
           </div>
@@ -318,10 +318,11 @@ class TimerLengthControl extends React.Component {
   }
 }
 
-// TimerClock Component
+// TimerClock Component - Clock face
 // - props.timerState
 // - props.duration
 // - props.remaining
+// - props.start
 // - props.end
 //
 // - Clock face
@@ -330,40 +331,42 @@ class TimerLengthControl extends React.Component {
 // - TODO: Progress indicator
 class TimerClock extends React.Component {
   render() {
-    const progress = (this.props.duration - this.props.remaining) / this.props.duration;
-    const percentage = Math.floor(progress * 100);
-    let end = new Date(this.props.end);
-    end = this.props.timerState === STATE_RUN ? end.toLocaleTimeString() : 'undefined'
-
+    const duration = this.props.duration;
+    const remaining = this.props.remaining;
+    const elapsed = duration - remaining;
+    
     return (
       <div className="row justify-content-center">
         <div className="col-auto">
-          <div className="row justify-content-center">
-            <h4 className="text-primary">Session</h4>
-          </div>
           <div className="row justify-content-center">
             <div className="col-auto">
               <CircularProgressBar
                     strokeWidth="10"
                     sqSize="200"
-                    value={percentage}
-                    text={clockify(this.props.remaining)}
+                    value={Math.floor(remaining / duration * 100)}
+                    text={clockify(remaining)}
               />
             </div>
           </div>
         </div>
         <div className="col-auto">
-          <div className="row justify-content-start">
-            duration: {clockify(this.props.duration)}
+          <div className="row justify-content-center">
+            <h4 className="text-primary">Session</h4>
           </div>
           <div className="row justify-content-start">
-            remaining: {clockify(this.props.remaining)}
+            Duration: {clockify(duration)}
           </div>
           <div className="row justify-content-start">
-            end: {end}
+            Elapsed: {clockify(elapsed)} ({toPercent(elapsed, duration)})
           </div>
           <div className="row justify-content-start">
-            progress: {Math.floor(progress * 100)}%
+            Remaining: {clockify(remaining)} ({toPercent(remaining, duration)})
+          </div>
+          <div className="row justify-content-start">
+            Started Session: {toDate(this.props.start)}
+          </div>
+          <div className="row justify-content-start">
+            Session Ending: {toDate(this.props.end)}
           </div>
        </div>
       </div>
