@@ -24,23 +24,12 @@
 // TODO: Switch from setInterval to Accurate_Interval
 
 import React from 'react';
-// import './App.css';
+import './App.css';
 
 // App Component
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>Clock</h1>
-        <hr />
-        <ul>
-          <li><a className="App-link" href="#">Alarm</a></li>
-          <li><a className="App-link" href="#">Stopwatch</a></li>
-          <li><a className="App-link" href="#">Timer</a></li>
-        </ul>
-        <hr />
-      </header>
-
       <div>
         <Timer />
       </div>
@@ -103,7 +92,9 @@ class Timer extends React.Component {
       remaining: duration,      // remaining time (mSec)
       end: 0,                   // end time (mSec - epoch time)
 
-      alarm: "Radar"
+      alarm: "Radar",
+
+      percentage: 0
     };
 
     // BINDINGS:
@@ -111,6 +102,14 @@ class Timer extends React.Component {
     this.startTimer = this.startTimer.bind(this);
     this.stopTimer = this.stopTimer.bind(this);
     this.handleInput = this.handleInput.bind(this);
+
+    this.handleChangeEvent = this.handleChangeEvent.bind(this);
+  }
+
+  handleChangeEvent(event) {
+    this.setState({
+      percentage: event.target.value
+    });
   }
 
   setSessionLength(e) {
@@ -202,17 +201,19 @@ class Timer extends React.Component {
         break;
     };
 
+    const progress = (this.state.duration - this.state.remaining) / this.state.duration;
+
     this.setState({
       remaining: remaining,
       timerID: timerID,
-      timerState: timerState
+      timerState: timerState,
+      percentage: Math.floor(progress * 100)
     });
   }
 
   render() {
     return (
       <div className="container">
-        <p>timerState: {this.state.timerState}</p>
 
         {/* Title */}
         <div className="row justify-content-center">
@@ -220,6 +221,7 @@ class Timer extends React.Component {
             <h2 className="text-primary">Pomodoro Clock</h2>
           </div>
         </div>
+        <hr />
 
         {/* Timer Length Controls */}
         <div className="row justify-content-center">
@@ -238,6 +240,7 @@ class Timer extends React.Component {
             />
           </div>
         </div>
+        <hr />
 
         {/* Clock Face */}
         <div className="row justify-content-center">
@@ -250,6 +253,7 @@ class Timer extends React.Component {
             />
           </div>
         </div>
+        <hr />
 
         {/* Clock Face */}
         <div className="row justify-content-center">
@@ -260,6 +264,7 @@ class Timer extends React.Component {
             />
           </div>
         </div>
+        <hr />
 
         {/* Alarm Control */}
         <div className="row justify-content-center">
@@ -267,6 +272,7 @@ class Timer extends React.Component {
             <TimerAlarm alarm={this.state.alarm} />
           </div>
         </div>
+        <hr />
       </div>
     );
   }
@@ -284,7 +290,7 @@ class TimerLengthControl extends React.Component {
       <div> 
         <div className="row justify-content-center">
           <div className="col-auto">
-            <h3 className="text-primary">{this.props.title}</h3>
+            <h4 className="text-primary">{this.props.title}</h4>
           </div>
         </div>
 
@@ -324,27 +330,53 @@ class TimerLengthControl extends React.Component {
 // - TODO: Progress indicator
 class TimerClock extends React.Component {
   render() {
-    const end = new Date(this.props.end);
     const progress = (this.props.duration - this.props.remaining) / this.props.duration;
+    const percentage = Math.floor(progress * 100);
+    let end = new Date(this.props.end);
+    end = this.props.timerState === STATE_RUN ? end.toLocaleTimeString() : 'undefined'
+
     return (
-      <div>
-        <h3 className="text-primary text-center">Session</h3>
-        <p>props.duration: {clockify(this.props.duration)}</p>
-        <p>props.remaining: {clockify(this.props.remaining)}</p>
-        { this.props.timerState === STATE_RUN ? (
-          <p>end: {end.toLocaleTimeString()}</p>
-        ) : (
-          <p>end:</p>
-        )}
-        <p>progress: {Math.floor(progress * 100)}%</p>
-     </div>
+      <div className="row justify-content-center">
+        <div className="col-auto">
+          <div className="row justify-content-center">
+            <h4 className="text-primary">Session</h4>
+          </div>
+          <div className="row justify-content-center">
+            <div className="col-auto">
+              <CircularProgressBar
+                    strokeWidth="10"
+                    sqSize="200"
+                    value={percentage}
+                    text={clockify(this.props.remaining)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="col-auto">
+          <div className="row justify-content-start">
+            duration: {clockify(this.props.duration)}
+          </div>
+          <div className="row justify-content-start">
+            remaining: {clockify(this.props.remaining)}
+          </div>
+          <div className="row justify-content-start">
+            end: {end}
+          </div>
+          <div className="row justify-content-start">
+            progress: {Math.floor(progress * 100)}%
+          </div>
+       </div>
+      </div>
     );
   }
 }
 
 // TimerControl Component
-// - Cancel
-// - Start/Pause/Resume
+// - Cancel Button
+// - Start/Pause/Resume Button
+// Properties:
+// - props.timerState
+// - props.onClick
 class TimerControl extends React.Component {
   render() {
     const timerState = this.props.timerState;
@@ -399,7 +431,7 @@ class TimerAlarm extends React.Component {
     return (
       <div className="row justify-content-center">
         <div className="col-auto">
-          <label for="alarm">When Timer Ends</label>
+          <label htmlFor="alarm">When Timer Ends</label>
           <button id="alarm" className="btn btn-secondary">{this.props.alarm} ></button>
         </div>
       </div>
@@ -407,3 +439,85 @@ class TimerAlarm extends React.Component {
     );
   }
 }
+
+
+/*
+  <div>
+    <input 
+      id="progressInput" 
+      type="range" 
+      min="0" 
+      max="100" 
+      step="1"
+      value={this.state.percentage}
+      onChange={this.handleChangeEvent}/>
+  </div>
+*/
+ 
+// CircularProgressBar Component
+// - props.sqSize
+// - props.strokeWidth
+// - props.value: percentage
+// - props.text: optional text (default to value + '%')
+//
+class CircularProgressBar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
+
+  render() {
+    // Size of the enclosing square
+    const sqSize = this.props.sqSize;
+    // SVG centers the stroke width on the radius, subtract out so circle fits in square
+    const radius = (this.props.sqSize - this.props.strokeWidth) / 2;
+    // Enclose cicle in a circumscribing square
+    const viewBox = `0 0 ${sqSize} ${sqSize}`;
+    // Arc length at 100% coverage is the circle circumference
+    const dashArray = radius * Math.PI * 2;
+    // Scale 100% coverage overlay with the actual percent
+    const dashOffset = dashArray - dashArray * this.props.value / 100;
+
+    const text = this.props.text ? this.props.text : this.props.value + '%';
+
+    return (
+      <svg
+          width={this.props.sqSize}
+          height={this.props.sqSize}
+          viewBox={viewBox}>
+          <circle
+            className="circle-background"
+            cx={this.props.sqSize / 2}
+            cy={this.props.sqSize / 2}
+            r={radius}
+            strokeWidth={`${this.props.strokeWidth}px`} />
+          <circle
+            className="circle-progress"
+            cx={this.props.sqSize / 2}
+            cy={this.props.sqSize / 2}
+            r={radius}
+            strokeWidth={`${this.props.strokeWidth}px`}
+            // Start progress marker at 12 O'Clock
+            transform={`rotate(-90 ${this.props.sqSize / 2} ${this.props.sqSize / 2})`}
+            style={{
+              strokeDasharray: dashArray,
+              strokeDashoffset: dashOffset
+            }} />
+          <text
+            className="circle-text"
+            x="50%"
+            y="50%"
+            dy=".3em"
+            textAnchor="middle">
+            {`${this.props.text}`}
+          </text>
+      </svg>
+    );
+  }
+}
+
+CircularProgressBar.defaultProps = {
+  sqSize: 200,
+  percentage: 0,
+  strokeWidth: 10
+};
