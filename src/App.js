@@ -217,7 +217,7 @@ class Timer extends React.Component {
         {/* Title */}
         <div className="row justify-content-center">
           <div className="col-auto">
-            <h2 className="text-primary">Pomodoro Clock</h2>
+            <h2 className="text-primary">Pomodoro Timer</h2>
           </div>
         </div>
         <hr />
@@ -299,7 +299,7 @@ class TimerLengthControl extends React.Component {
             <button className="btn btn-secondary"
               onClick={this.props.onClick}
               value="-">
-                -
+                <i className="fa fa-arrow-down"/>
             </button>
 
             <button className="btn btn-primary">
@@ -309,7 +309,7 @@ class TimerLengthControl extends React.Component {
             <button className="btn btn-secondary"
               onClick={this.props.onClick}
               value="+">
-                + <i className="fa fa-arrow-up fa-2x"/>
+                <i className="fa fa-arrow-up"/>
             </button>
           </div>
         </div>
