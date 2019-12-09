@@ -112,15 +112,16 @@ class Timer extends React.Component {
     this.handleInput = this.handleInput.bind(this);
   }
 
+  // Handle click on TimerLengthControl increment/decrement buttons
   setSessionLength(e) {
     if (this.state.timerState !== STATE_INIT) return;
 
     let increment = 1;
-    if (e.currentTarget.value === "-") {
+    if (e.target.value === "-") {
       increment = -increment;
     }
 
-    let newLength = toMin(this.state.duration) + increment;
+    const newLength = toMin(this.state.duration) + increment;
     if (0 < newLength && newLength <= 60) {
       this.setState({
         duration: fromMin(newLength),
@@ -228,14 +229,14 @@ class Timer extends React.Component {
             <TimerLengthControl
               title="Session Length"
               duration={this.state.duration}
-              onClick={this.setSessionLength}
+              handleClick={this.setSessionLength}
             />
           </div>
           <div className="col-auto">
             <TimerLengthControl
               title="Break Length"
               duration="5"
-              onClick={this.setSessionLength}
+              handleClick={this.setSessionLength}
             />
           </div>
         </div>
@@ -282,7 +283,7 @@ class Timer extends React.Component {
 // TimerLengthControl Component
 // - props.title
 // - props.duration
-// - props.onClick
+// - props.handleClick
 class TimerLengthControl extends React.Component {
   // TODO: Disable buttons when not STATE_INIT
   render() {
@@ -297,7 +298,7 @@ class TimerLengthControl extends React.Component {
         <div className="row justify-content-center">
           <div className="col-auto">
             <button className="btn btn-secondary"
-              onClick={this.props.onClick}
+              onClick={this.props.handleClick}
               value="-">
                 <i className="fa fa-arrow-down"/>
             </button>
@@ -307,7 +308,7 @@ class TimerLengthControl extends React.Component {
             </button>
 
             <button className="btn btn-secondary"
-              onClick={this.props.onClick}
+              onClick={this.props.handleClick}
               value="+">
                 <i className="fa fa-arrow-up"/>
             </button>
@@ -324,11 +325,6 @@ class TimerLengthControl extends React.Component {
 // - props.remaining
 // - props.start
 // - props.end
-//
-// - Clock face
-// - TODO: Format time remaining (min:sec)
-// - TODO: End time
-// - TODO: Progress indicator
 class TimerClock extends React.Component {
   render() {
     const duration = this.props.duration;
@@ -361,6 +357,9 @@ class TimerClock extends React.Component {
           </div>
           <div className="row justify-content-start">
             Remaining: {clockify(remaining)} ({toPercent(remaining, duration)})
+          </div>
+          <div className="row justify-content-start">
+            Paused: {clockify(this.props.end - this.props.start - this.props.duration)}
           </div>
           <div className="row justify-content-start">
             Started Session: {toDate(this.props.start)}
