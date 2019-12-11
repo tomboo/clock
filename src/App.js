@@ -39,18 +39,8 @@ function App() {
 
 export default App;
 
-// TODO: Review State Design Pattern
 
-const STATE_INIT    = 'initial';
-const STATE_RUN     = 'run';
-const STATE_PAUSE   = 'pause';
-
-const INPUT_CANCEL  = 'cancel';
-const INPUT_START   = 'start';
-const INPUT_PAUSE   = 'pause';
-const INPUT_RESUME  = 'resume';
-const INPUT_TICK    = 'tick';
-
+// Formatting routines
 function toSec(ms) {
   return Math.floor(ms / 1000);
 }
@@ -79,26 +69,42 @@ function toDate(ms) {
 }
 
 
+const INTERVAL = fromSec(1);      // update interval
+
+// TODO: Review State Design Pattern
+
+const STATE_INIT    = 'initial';
+const STATE_RUN     = 'run';
+const STATE_PAUSE   = 'pause';
+
+const INPUT_CANCEL  = 'cancel';
+const INPUT_START   = 'start';
+const INPUT_PAUSE   = 'pause';
+const INPUT_RESUME  = 'resume';
+const INPUT_TICK    = 'tick';
+
+
 // Timer Component
 // - Parent component
 class Timer extends React.Component {
   constructor(props) {
     super(props);
 
-    // TODO: Add duration and interval to settings
-    let duration = fromMin(1); // TODO: Set default duration to 25 mins
-    let interval = fromSec(1);
-
     // STATE:
     this.state = {
       timerState: STATE_INIT,   // timer state
       timerID: 0,               // update timer ID
 
-      interval: interval,       // update interval (mSec)
-      duration: duration,       // session length (mSec)
+      phase: [
+        { name: 'Session',  length: fromMin(25), },
+        { name: 'Break',    length: fromMin(5), },
+      ],
+      phaseIndex: 0,
+           
+      // current phase
+      duration: fromMin(25),    // session length (mSec)
       elapsed: 0,               // elapsed time (mSec)
-      remaining: duration,      // remaining time (mSec)
-
+      remaining: 0,             // remaining time (mSec)
       start: 0,                 // started session (mSec - epoch time)
       end: 0,                   // session ending (mSec - epoch time)
 
@@ -106,34 +112,59 @@ class Timer extends React.Component {
     };
 
     // BINDINGS:
-    this.setSessionLength = this.setSessionLength.bind(this);
+    this.phaseInit = this.phaseInit.bind(this);
+    this.setLength = this.setLength.bind(this);
     this.startTimer = this.startTimer.bind(this);
     this.stopTimer = this.stopTimer.bind(this);
     this.handleInput = this.handleInput.bind(this);
   }
 
-  // Handle click on TimerLengthControl increment/decrement buttons
-  setSessionLength(e) {
+  //Lifecycle Methods
+  componentDidMount() {
+    this.phaseInit(0);
+  }
+
+  phaseInit(index) {
+    const duration = this.state.phase[index].length;
+    const now = Date.now();
+
+    this.setState({
+      phaseIndex: index,
+      duration: duration,
+      elapsed: 0,
+      remaining: duration,
+      start: now,
+      end: now,
+    });
+  }
+
+  // Event Handlers
+  // Handle click on IntegerControl increment/decrement buttons
+  setLength(phaseIndex, increment) {
     if (this.state.timerState !== STATE_INIT) return;
 
-    let increment = 1;
-    if (e.target.value === "-") {
-      increment = -increment;
-    }
-
-    const newLength = toMin(this.state.duration) + increment;
+    let newLength = toMin(this.state.phase[phaseIndex].length) + increment;
     if (0 < newLength && newLength <= 60) {
+      newLength = fromMin(newLength);
+
+      let phaseCopy = this.state.phase.slice();   // create clone of phase array
+      phaseCopy[phaseIndex].length = newLength;
       this.setState({
-        duration: fromMin(newLength),
-        remaining: fromMin(newLength)
-      });  
-    }
+        phase: phaseCopy
+      });
+      if (phaseIndex === 0) {
+        this.setState({
+          duration: newLength,
+          remaining: newLength  
+        });
+      }
+    }  
   }
 
   startTimer() {
-    let timerState = this.state.timerState;
-    let duration = this.state.duration;
-    let now = Date.now();
+    const timerState = this.state.timerState;
+    const duration = this.state.duration;
+    const now = Date.now();
 
     if (timerState === STATE_INIT) {
       this.setState({
@@ -152,7 +183,7 @@ class Timer extends React.Component {
       console.log('ERROR');  // TODO: assert
     }
 
-    return setInterval(() => this.handleInput(INPUT_TICK), this.state.interval);
+    return setInterval(() => this.handleInput(INPUT_TICK), INTERVAL);
   }
 
   stopTimer(timerID) {
@@ -226,17 +257,19 @@ class Timer extends React.Component {
         {/* Timer Length Controls */}
         <div className="row justify-content-center">
           <div className="col-auto">
-            <TimerLengthControl
-              title="Session Length"
-              duration={this.state.duration}
-              handleClick={this.setSessionLength}
+            <IntegerControl
+              title={this.state.phase[0].name}
+              value={this.state.phase[0].length}
+              increment={() => this.setLength(0, 1)}
+              decrement={() => this.setLength(0, -1)}
             />
           </div>
           <div className="col-auto">
-            <TimerLengthControl
-              title="Break Length"
-              duration="5"
-              handleClick={this.setSessionLength}
+            <IntegerControl
+              title={this.state.phase[1].name}
+              value={this.state.phase[1].length}
+              increment={() => this.setLength(1, 1)}
+              decrement={() => this.setLength(1, -1)}
             />
           </div>
         </div>
@@ -247,6 +280,7 @@ class Timer extends React.Component {
           <div className="col-auto">
             <TimerClock
               timerState={this.state.timerState}
+              title={this.state.phase[this.state.phaseIndex].name}
               duration={this.state.duration}
               remaining={this.state.remaining}
               start={this.state.start}
@@ -256,7 +290,7 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Clock Face */}
+        {/* Timer Controls */}
         <div className="row justify-content-center">
           <div className="col-auto"> 
             <TimerControl
@@ -280,12 +314,12 @@ class Timer extends React.Component {
 }
 
 
-// TimerLengthControl Component
+// IntegerControl Component
 // - props.title
-// - props.duration
-// - props.handleClick
-class TimerLengthControl extends React.Component {
-  // TODO: Disable buttons when not STATE_INIT
+// - props.value
+// - props.increment
+// - props.decrement
+class IntegerControl extends React.Component {
   render() {
     return (
       <div> 
@@ -298,17 +332,17 @@ class TimerLengthControl extends React.Component {
         <div className="row justify-content-center">
           <div className="col-auto">
             <button className="btn btn-secondary"
-              onClick={this.props.handleClick}
+              onClick={this.props.decrement}
               value="-">
                 <i className="fa fa-arrow-down"/>
             </button>
 
             <button className="btn btn-primary">
-              {toMin(this.props.duration)}
+              {toMin(this.props.value)}
             </button>
 
             <button className="btn btn-secondary"
-              onClick={this.props.handleClick}
+              onClick={this.props.increment}
               value="+">
                 <i className="fa fa-arrow-up"/>
             </button>
@@ -321,6 +355,7 @@ class TimerLengthControl extends React.Component {
 
 // TimerClock Component - Clock face
 // - props.timerState
+// - props.title
 // - props.duration
 // - props.remaining
 // - props.start
@@ -347,7 +382,7 @@ class TimerClock extends React.Component {
         </div>
         <div className="col-auto">
           <div className="row justify-content-center">
-            <h4 className="text-primary">Session</h4>
+            <h4 className="text-primary">{this.props.title}</h4>
           </div>
           <div className="row justify-content-start">
             Duration: {clockify(duration)}
@@ -362,10 +397,13 @@ class TimerClock extends React.Component {
             Paused: {clockify(this.props.end - this.props.start - this.props.duration)}
           </div>
           <div className="row justify-content-start">
-            Started Session: {toDate(this.props.start)}
+            Started {this.props.title}: {toDate(this.props.start)}
           </div>
           <div className="row justify-content-start">
-            Session Ending: {toDate(this.props.end)}
+            {this.props.title} Ending: {toDate(this.props.end)}
+          </div>
+          <div className="row justify-content-start">
+            Timer State: {this.props.timerState}
           </div>
        </div>
       </div>
@@ -436,8 +474,7 @@ class TimerAlarm extends React.Component {
           <label htmlFor="alarm">When Timer Ends</label>
           <button id="alarm" className="btn btn-secondary">{this.props.alarm} ></button>
         </div>
-      </div>
-    
+      </div>    
     );
   }
 }
@@ -459,7 +496,7 @@ class TimerAlarm extends React.Component {
 // CircularProgressBar Component
 // - props.sqSize
 // - props.strokeWidth
-// - props.value: percentage
+// - props.value (percentage)
 // - props.text: optional text (default to value + '%')
 //
 class CircularProgressBar extends React.Component {
@@ -520,6 +557,7 @@ class CircularProgressBar extends React.Component {
 
 CircularProgressBar.defaultProps = {
   sqSize: 200,
-  percentage: 0,
-  strokeWidth: 10
+  strokeWidth: 10,
+  value: 0,
+  text: ''
 };
