@@ -139,6 +139,7 @@ class Timer extends React.Component {
   }
 
   // Event Handlers
+
   // Handle click on IntegerControl increment/decrement buttons
   setLength(phaseIndex, increment) {
     if (this.state.timerState !== STATE_INIT) return;
@@ -254,7 +255,7 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Timer Length Controls */}
+        {/* Phase Length Controls */}
         <div className="row justify-content-center">
           <div className="col-auto">
             <IntegerControl
@@ -314,45 +315,6 @@ class Timer extends React.Component {
 }
 
 
-// IntegerControl Component
-// - props.title
-// - props.value
-// - props.increment
-// - props.decrement
-class IntegerControl extends React.Component {
-  render() {
-    return (
-      <div> 
-        <div className="row justify-content-center">
-          <div className="col-auto">
-            <h4 className="text-primary">{this.props.title}</h4>
-          </div>
-        </div>
-
-        <div className="row justify-content-center">
-          <div className="col-auto">
-            <button className="btn btn-secondary"
-              onClick={this.props.decrement}
-              value="-">
-                <i className="fa fa-arrow-down"/>
-            </button>
-
-            <button className="btn btn-primary">
-              {toMin(this.props.value)}
-            </button>
-
-            <button className="btn btn-secondary"
-              onClick={this.props.increment}
-              value="+">
-                <i className="fa fa-arrow-up"/>
-            </button>
-          </div>
-        </div>
-      </div>  
-    )
-  }
-}
-
 // TimerClock Component - Clock face
 // - props.timerState
 // - props.title
@@ -411,9 +373,11 @@ class TimerClock extends React.Component {
   }
 }
 
+
 // TimerControl Component
 // - Cancel Button
 // - Start/Pause/Resume Button
+//
 // Properties:
 // - props.timerState
 // - props.onClick
@@ -426,6 +390,7 @@ class TimerControl extends React.Component {
     let buttonAction = null;
 
     switch (timerState){
+      default:    // fall through
       case STATE_INIT:
         buttonLabel = 'Start';
         buttonAction = INPUT_START;
@@ -437,10 +402,6 @@ class TimerControl extends React.Component {
       case STATE_PAUSE:
         buttonLabel = 'Resume';
         buttonAction = INPUT_RESUME;
-        break;
-      default:
-        buttonLabel = 'ERROR';
-        buttonAction = INPUT_CANCEL;
         break;
     };
 
@@ -464,6 +425,7 @@ class TimerControl extends React.Component {
   }
 }
 
+
 // TimerAlarm Component
 // - Pick alarm sound
 class TimerAlarm extends React.Component {
@@ -480,18 +442,48 @@ class TimerAlarm extends React.Component {
 }
 
 
-/*
-  <div>
-    <input 
-      id="progressInput" 
-      type="range" 
-      min="0" 
-      max="100" 
-      step="1"
-      value={this.state.percentage}
-      onChange={this.handleChangeEvent}/>
-  </div>
-*/
+/*** GENERIC CONTROLS ***/
+
+
+// IntegerControl Component
+// - props.title
+// - props.value
+// - props.increment
+// - props.decrement
+class IntegerControl extends React.Component {
+  render() {
+    return (
+      <div> 
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <h4 className="text-primary">{this.props.title}</h4>
+          </div>
+        </div>
+
+        <div className="row justify-content-center">
+          <div className="col-auto">
+            <button className="btn btn-secondary"
+              onClick={this.props.decrement}
+              value="-">
+                <i className="fa fa-arrow-down"/>
+            </button>
+
+            <button className="btn btn-primary">
+              {toMin(this.props.value)}
+            </button>
+
+            <button className="btn btn-secondary"
+              onClick={this.props.increment}
+              value="+">
+                <i className="fa fa-arrow-up"/>
+            </button>
+          </div>
+        </div>
+      </div>  
+    )
+  }
+}
+
  
 // CircularProgressBar Component
 // - props.sqSize
@@ -561,3 +553,17 @@ CircularProgressBar.defaultProps = {
   value: 0,
   text: ''
 };
+
+
+/*
+  <div>
+    <input 
+      id="progressInput" 
+      type="range" 
+      min="0" 
+      max="100" 
+      step="1"
+      value={this.state.percentage}
+      onChange={this.handleChangeEvent}/>
+  </div>
+*/
