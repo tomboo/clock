@@ -81,7 +81,6 @@ const INPUT_CANCEL  = 'cancel';
 const INPUT_START   = 'start';
 const INPUT_PAUSE   = 'pause';
 const INPUT_RESUME  = 'resume';
-const INPUT_TICK    = 'tick';
 
 
 // Timer Component
@@ -111,20 +110,17 @@ class Timer extends React.Component {
       alarm: "Radar",
     };
 
-    // BINDINGS:
-    this.phaseInit = this.phaseInit.bind(this);
+    // BINDINGS: (required for functions that are passed to other components)
     this.setLength = this.setLength.bind(this);
-    this.startTimer = this.startTimer.bind(this);
-    this.stopTimer = this.stopTimer.bind(this);
     this.handleInput = this.handleInput.bind(this);
   }
 
   //Lifecycle Methods
   componentDidMount() {
-    this.phaseInit(0);
+    this.setPhase(0);
   }
 
-  phaseInit(index) {
+  setPhase(index) {
     const duration = this.state.phase[index].length;
     const now = Date.now();
 
@@ -134,7 +130,7 @@ class Timer extends React.Component {
       elapsed: 0,
       remaining: duration,
       start: now,
-      end: now,
+      end: now + duration,
     });
   }
 
@@ -184,7 +180,7 @@ class Timer extends React.Component {
       console.log('ERROR');  // TODO: assert
     }
 
-    return setInterval(() => this.handleInput(INPUT_TICK), INTERVAL);
+    return setInterval(() => this.tick(), INTERVAL);
   }
 
   stopTimer(timerID) {
@@ -200,6 +196,7 @@ class Timer extends React.Component {
     let timerState = this.state.timerState;
 
     switch (input) {
+      default:    // fall through
       case INPUT_CANCEL:
         remaining = this.state.duration;
         timerID = this.stopTimer(timerID);
@@ -218,23 +215,7 @@ class Timer extends React.Component {
         timerID = this.startTimer();
         timerState = STATE_RUN;
         break;
-      case INPUT_TICK:
-        remaining = this.state.end - Date.now();
-        // TODO: switch to red timer when remaining reaches n minutes
-        if (remaining <= 0) {
-          remaining = 0;
-          timerID = this.stopTimer(timerID);
-          timerState = STATE_INIT;
-
-          // TODO: Timer should display zero before sounding alarm
-          // TODO: Sound alarm
-          console.log('*** SOUND ALARM ***');
-        }
-        break;
-      default:
-        timerState = STATE_INIT;
-        break;
-    };
+    }
 
     this.setState({
       remaining: remaining,
@@ -242,6 +223,46 @@ class Timer extends React.Component {
       timerState: timerState
     });
   }
+
+  tick() {
+    const remaining = Math.max(0, this.state.end - Date.now());
+    if (remaining === this.state.remaining) {
+      return;   // no change
+    }
+    this.setState({remaining: remaining});
+
+    this.tickWarn(remaining);
+    this.tickAlarm(remaining);
+    this.tickPhase(remaining);
+  }
+
+  tickWarn(remaining) {
+    // TODO: switch to red timer when remaining reaches n minutes
+  }
+
+  tickAlarm(remaining) {
+    if (remaining) return;
+
+    // sound alarm
+    this.setState({
+      timerID: this.stopTimer(this.state.timerID),
+      timerState: STATE_INIT
+    });
+
+    // TODO: Timer should display zero before sounding alarm
+    // TODO: Sound alarm
+    console.log('*** SOUND ALARM ***');
+  }
+
+  tickPhase(remaining) {
+    if (remaining) return;
+    if (this.state.phase.length <= 1) return;
+
+    // change phase
+    const phaseIndex = (this.state.phaseIndex + 1) % this.state.phase.length;
+    this.setPhase(phaseIndex)
+  }
+
 
   render() {
     return (
@@ -309,6 +330,7 @@ class Timer extends React.Component {
           </div>
         </div>
         <hr />
+
       </div>
     );
   }
