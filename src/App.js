@@ -225,12 +225,14 @@ class Timer extends React.Component {
   }
 
   tick() {
+    // update remaining time
     const remaining = Math.max(0, this.state.end - Date.now());
     if (remaining === this.state.remaining) {
       return;   // no change
     }
     this.setState({remaining: remaining});
 
+    // on update remaining time
     this.tickWarn(remaining);
     this.tickAlarm(remaining);
     this.tickPhase(remaining);
@@ -276,11 +278,11 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Phase Length Controls */}
+        {/* Settings: Phase Length Controls */}
         <div className="row justify-content-center">
           <div className="col-auto">
             <IntegerControl
-              title={this.state.phase[0].name}
+              title={`${this.state.phase[0].name} Length`}
               value={this.state.phase[0].length}
               increment={() => this.setLength(0, 1)}
               decrement={() => this.setLength(0, -1)}
@@ -288,7 +290,7 @@ class Timer extends React.Component {
           </div>
           <div className="col-auto">
             <IntegerControl
-              title={this.state.phase[1].name}
+              title={`${this.state.phase[1].name} Length`}
               value={this.state.phase[1].length}
               increment={() => this.setLength(1, 1)}
               decrement={() => this.setLength(1, -1)}
@@ -297,7 +299,7 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Clock Face */}
+        {/* Timer: Clock Face */}
         <div className="row justify-content-center">
           <div className="col-auto">
             <TimerClock
@@ -312,7 +314,7 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Timer Controls */}
+        {/* Timer: Controls */}
         <div className="row justify-content-center">
           <div className="col-auto"> 
             <TimerControl
@@ -323,7 +325,7 @@ class Timer extends React.Component {
         </div>
         <hr />
 
-        {/* Alarm Control */}
+        {/* Settings: Alarm Control */}
         <div className="row justify-content-center">
           <div className="col-auto"> 
             <TimerAlarm alarm={this.state.alarm} />
