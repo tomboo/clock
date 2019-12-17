@@ -68,19 +68,121 @@ function toDate(ms) {
   return date.toLocaleTimeString();
 }
 
-
 const INTERVAL = fromSec(1);      // update interval
 
-// TODO: Review State Design Pattern
-
+/* State Design Pattern
+ */
 const STATE_INIT    = 'initial';
 const STATE_RUN     = 'run';
 const STATE_PAUSE   = 'pause';
 
-const INPUT_CANCEL  = 'cancel';
-const INPUT_START   = 'start';
-const INPUT_PAUSE   = 'pause';
-const INPUT_RESUME  = 'resume';
+// Base class
+//
+class TimerState {
+  constructor(name) {
+    this.name = name;
+  }
+
+  // Override
+  cancel(context) {
+    context.reset();
+  }
+}
+
+// InitialState
+//
+class InitialState extends TimerState {
+  constructor() {
+    super(STATE_INIT);
+  }
+
+  // Override
+  start(context) {
+    const now = Date.now();
+    const duration = context.state.duration;
+
+    context.startTimer();
+    context.setState({
+      elapsed: 0,
+      remaining: duration,
+      start: now,
+      end: now + duration,
+    });
+    context.setTimerState(new RunState());
+  }
+
+  renderButtons(context) {
+    return (
+      <div>
+        <button onClick={() => this.cancel(context)} disabled={true}>
+          Cancel
+        </button>
+        <button onClick={() => this.start(context)}>
+          Start
+        </button>
+      </div>
+    );
+  }
+}
+
+// RunState
+//
+class RunState extends TimerState {
+  constructor() {
+    super(STATE_RUN);
+  }
+
+  // Override
+  pause(context) {
+    context.stopTimer();
+    context.setTimerState(new PauseState());
+  }
+
+  renderButtons(context) {
+    return (
+      <div>
+        <button onClick={() => this.cancel(context)}>
+          Cancel
+        </button>
+        <button onClick={() => this.pause(context)}>
+          Pause
+        </button>
+      </div>
+    );
+  }
+}
+
+// PauseState
+//
+class PauseState extends TimerState {
+	constructor() {
+		super(STATE_PAUSE);
+  }
+
+  // Override
+  resume(context) {
+    const now = Date.now();
+
+    context.startTimer();
+    context.setState({
+      end: now + context.state.remaining
+    })
+    context.setTimerState(new RunState());
+  }
+
+  renderButtons(context) {
+    return (
+      <div>
+        <button onClick={() => this.cancel(context)}>
+          Cancel
+        </button>
+        <button onClick={() => this.resume(context)}>
+          Resume
+        </button>
+      </div>
+    );
+  }
+}
 
 
 // Timer Component
@@ -91,7 +193,7 @@ class Timer extends React.Component {
 
     // STATE:
     this.state = {
-      timerState: STATE_INIT,   // timer state
+      timerState: new InitialState(),   // timer state
       timerID: 0,               // update timer ID
 
       phase: [
@@ -101,7 +203,7 @@ class Timer extends React.Component {
       phaseIndex: 0,
            
       // current phase
-      duration: fromMin(25),    // session length (mSec)
+      duration: 0,              // session length (mSec)
       elapsed: 0,               // elapsed time (mSec)
       remaining: 0,             // remaining time (mSec)
       start: 0,                 // started session (mSec - epoch time)
@@ -112,12 +214,23 @@ class Timer extends React.Component {
 
     // BINDINGS: (required for functions that are passed to other components)
     this.setLength = this.setLength.bind(this);
-    this.handleInput = this.handleInput.bind(this);
   }
 
   //Lifecycle Methods
   componentDidMount() {
+    this.reset();
+  }
+
+  reset() {
+    this.stopTimer();
     this.setPhase(0);
+    this.setTimerState(new InitialState());
+  }
+
+  setTimerState(state) {
+    this.setState({
+      timerState: state
+    });
   }
 
   setPhase(index) {
@@ -138,7 +251,7 @@ class Timer extends React.Component {
 
   // Handle click on IntegerControl increment/decrement buttons
   setLength(phaseIndex, increment) {
-    if (this.state.timerState !== STATE_INIT) return;
+    if (this.state.timerState.name !== STATE_INIT) return;
 
     let newLength = toMin(this.state.phase[phaseIndex].length) + increment;
     if (0 < newLength && newLength <= 60) {
@@ -159,69 +272,23 @@ class Timer extends React.Component {
   }
 
   startTimer() {
-    const timerState = this.state.timerState;
-    const duration = this.state.duration;
-    const now = Date.now();
-
-    if (timerState === STATE_INIT) {
+    let timerID = this.state.timerID;
+    if (!timerID) {
+      timerID = setInterval(() => this.tick(), INTERVAL);
       this.setState({
-        elapsed: 0,
-        remaining: duration,
-        start: now,
-        end: now + duration
+        timerID: timerID
       });
     }
-    else if (timerState === STATE_PAUSE) {
-      this.setState({
-        end: now + this.state.remaining
-      });
-    }
-    else {
-      console.log('ERROR');  // TODO: assert
-    }
-
-    return setInterval(() => this.tick(), INTERVAL);
   }
 
-  stopTimer(timerID) {
+  stopTimer() {
+    let timerID = this.state.timerID;
     if (timerID) {
       clearInterval(timerID);
+      this.setState({
+        timerID: 0
+      });
     }
-    return 0;
-  }
-
-  handleInput(input) {
-    let remaining = this.state.remaining;
-    let timerID = this.state.timerID;
-    let timerState = this.state.timerState;
-
-    switch (input) {
-      default:    // fall through
-      case INPUT_CANCEL:
-        remaining = this.state.duration;
-        timerID = this.stopTimer(timerID);
-        timerState = STATE_INIT;
-        break;
-      case INPUT_START:
-        remaining = this.state.duration;
-        timerID = this.startTimer();
-        timerState = STATE_RUN;
-        break;
-      case INPUT_PAUSE:
-        timerID = this.stopTimer(timerID);
-        timerState = STATE_PAUSE;
-        break;
-      case INPUT_RESUME:
-        timerID = this.startTimer();
-        timerState = STATE_RUN;
-        break;
-    }
-
-    this.setState({
-      remaining: remaining,
-      timerID: timerID,
-      timerState: timerState
-    });
   }
 
   tick() {
@@ -246,10 +313,8 @@ class Timer extends React.Component {
     if (remaining) return;
 
     // sound alarm
-    this.setState({
-      timerID: this.stopTimer(this.state.timerID),
-      timerState: STATE_INIT
-    });
+    this.stopTimer();
+    this.setTimerState(new InitialState());
 
     // TODO: Timer should display zero before sounding alarm
     // TODO: Sound alarm
@@ -303,7 +368,7 @@ class Timer extends React.Component {
         <div className="row justify-content-center">
           <div className="col-auto">
             <TimerClock
-              timerState={this.state.timerState}
+              timerState={this.state.timerState.name}
               title={this.state.phase[this.state.phaseIndex].name}
               duration={this.state.duration}
               remaining={this.state.remaining}
@@ -317,10 +382,7 @@ class Timer extends React.Component {
         {/* Timer: Controls */}
         <div className="row justify-content-center">
           <div className="col-auto"> 
-            <TimerControl
-              timerState={this.state.timerState}
-              onClick={input => this.handleInput(input)}
-            />
+            {this.state.timerState.renderButtons(this)}
           </div>
         </div>
         <hr />
@@ -396,59 +458,6 @@ class TimerClock extends React.Component {
     );
   }
 }
-
-
-// TimerControl Component
-// - Cancel Button
-// - Start/Pause/Resume Button
-//
-// Properties:
-// - props.timerState
-// - props.onClick
-class TimerControl extends React.Component {
-  render() {
-    const timerState = this.props.timerState;
-    const disabled = (timerState === STATE_INIT);
-
-    let buttonLabel = null;
-    let buttonAction = null;
-
-    switch (timerState){
-      default:    // fall through
-      case STATE_INIT:
-        buttonLabel = 'Start';
-        buttonAction = INPUT_START;
-        break;
-      case STATE_RUN:
-        buttonLabel = 'Pause';
-        buttonAction = INPUT_PAUSE;
-        break;
-      case STATE_PAUSE:
-        buttonLabel = 'Resume';
-        buttonAction = INPUT_RESUME;
-        break;
-    };
-
-    return (
-      <div>
-        <div className="row justify-content-center">
-          <div className="col-auto">
-            <button className="btn btn-danger"
-              onClick={() => this.props.onClick(INPUT_CANCEL)}
-              disabled={disabled}>
-                Cancel
-            </button>
-            <button className="btn btn-primary"
-              onClick={() => this.props.onClick(buttonAction)}>
-                {buttonLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-}
-
 
 // TimerAlarm Component
 // - Pick alarm sound
@@ -577,17 +586,3 @@ CircularProgressBar.defaultProps = {
   value: 0,
   text: ''
 };
-
-
-/*
-  <div>
-    <input 
-      id="progressInput" 
-      type="range" 
-      min="0" 
-      max="100" 
-      step="1"
-      value={this.state.percentage}
-      onChange={this.handleChangeEvent}/>
-  </div>
-*/
