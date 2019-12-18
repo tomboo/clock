@@ -87,6 +87,14 @@ class TimerState {
   cancel(context) {
     context.reset();
   }
+
+  renderButton(label, handleClick, disabled=false) {
+    return(
+      <button className="btn btn-primary mr-1" onClick={handleClick} disabled={disabled}>
+        {label}
+      </button>
+    );
+  }
 }
 
 // InitialState
@@ -114,12 +122,8 @@ class InitialState extends TimerState {
   renderButtons(context) {
     return (
       <div>
-        <button onClick={() => this.cancel(context)} disabled={true}>
-          Cancel
-        </button>
-        <button onClick={() => this.start(context)}>
-          Start
-        </button>
+        {this.renderButton('Cancel', () => this.cancel(context), true)}
+        {this.renderButton('Start', () => this.start(context))}
       </div>
     );
   }
@@ -141,12 +145,8 @@ class RunState extends TimerState {
   renderButtons(context) {
     return (
       <div>
-        <button onClick={() => this.cancel(context)}>
-          Cancel
-        </button>
-        <button onClick={() => this.pause(context)}>
-          Pause
-        </button>
+        {this.renderButton('Cancel', () => this.cancel(context))}
+        {this.renderButton('Pause', () => this.pause(context))}
       </div>
     );
   }
@@ -173,12 +173,8 @@ class PauseState extends TimerState {
   renderButtons(context) {
     return (
       <div>
-        <button onClick={() => this.cancel(context)}>
-          Cancel
-        </button>
-        <button onClick={() => this.resume(context)}>
-          Resume
-        </button>
+        {this.renderButton('Cancel', () => this.cancel(context))}
+        {this.renderButton('Resume', () => this.resume(context))}
       </div>
     );
   }
@@ -203,7 +199,7 @@ class Timer extends React.Component {
       phaseIndex: 0,
            
       // current phase
-      duration: 0,              // session length (mSec)
+      duration: fromMin(1),     // session length (mSec)
       elapsed: 0,               // elapsed time (mSec)
       remaining: 0,             // remaining time (mSec)
       start: 0,                 // started session (mSec - epoch time)
@@ -412,6 +408,7 @@ class TimerClock extends React.Component {
     const duration = this.props.duration;
     const remaining = this.props.remaining;
     const elapsed = duration - remaining;
+    const paused = Math.max(0, this.props.end - this.props.start - duration);
     
     return (
       <div className="row justify-content-center">
@@ -444,7 +441,7 @@ class TimerClock extends React.Component {
             Remaining: {clockify(remaining)} ({toPercent(remaining, duration)})
           </div>
           <div className="row justify-content-start">
-            Paused: {clockify(this.props.end - this.props.start - this.props.duration)}
+            Paused: {clockify(paused)}
           </div>
   
           {/* Start and End Time */}
@@ -472,7 +469,7 @@ class TimerAlarm extends React.Component {
       <div className="row justify-content-center">
         <div className="col-auto">
           <label htmlFor="alarm">When Timer Ends</label>
-          <button id="alarm" className="btn btn-secondary">{this.props.alarm} ></button>
+          <button id="alarm" className="btn btn-primary ml-1">{this.props.alarm} ></button>
         </div>
       </div>    
     );
@@ -500,19 +497,17 @@ class IntegerControl extends React.Component {
 
         <div className="row justify-content-center">
           <div className="col-auto">
-            <button className="btn btn-secondary"
-              onClick={this.props.decrement}
-              value="-">
+            <button className="btn btn-primary mr-1"
+              onClick={this.props.decrement}>
                 <i className="fa fa-arrow-down"/>
             </button>
 
-            <button className="btn btn-primary">
+            <button className="btn btn-outline-primary mr-1">
               {toMin(this.props.value)}
             </button>
 
-            <button className="btn btn-secondary"
-              onClick={this.props.increment}
-              value="+">
+            <button className="btn btn-primary mr-1"
+              onClick={this.props.increment}>
                 <i className="fa fa-arrow-up"/>
             </button>
           </div>
