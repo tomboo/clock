@@ -235,15 +235,14 @@ class Timer extends React.Component {
 
   setPhase(index) {
     const duration = this.state.phase[index].length;
-    const now = Date.now();
 
     this.setState({
       phaseIndex: index,
       duration: duration,
       elapsed: 0,
       remaining: duration,
-      start: now,
-      end: now + duration,
+      start: 0,
+      end: 0,
     });
   }
 
@@ -433,6 +432,9 @@ class TimerClock extends React.Component {
             <h4 className="text-primary">{this.props.title}</h4>
           </div>
           <div className="row justify-content-start">
+            Timer State: {this.props.timerState}
+          </div>
+          <div className="row justify-content-start">
             Duration: {clockify(duration)}
           </div>
           <div className="row justify-content-start">
@@ -444,15 +446,18 @@ class TimerClock extends React.Component {
           <div className="row justify-content-start">
             Paused: {clockify(this.props.end - this.props.start - this.props.duration)}
           </div>
-          <div className="row justify-content-start">
-            Started {this.props.title}: {toDate(this.props.start)}
-          </div>
-          <div className="row justify-content-start">
-            {this.props.title} Ending: {toDate(this.props.end)}
-          </div>
-          <div className="row justify-content-start">
-            Timer State: {this.props.timerState}
-          </div>
+  
+          {/* Start and End Time */}
+          {this.props.timerState !== STATE_INIT &&
+            <div>
+              <div className="row justify-content-start">
+                Started {this.props.title}: {toDate(this.props.start)}
+              </div>
+              <div className="row justify-content-start">
+                {this.props.title} Ending: {toDate(this.props.end)}
+              </div>
+            </div>
+          }
        </div>
       </div>
     );
