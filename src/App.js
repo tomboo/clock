@@ -221,6 +221,9 @@ class Timer extends React.Component {
     this.stopTimer();
     this.setPhase(0);
     this.setTimerState(new InitialState());
+
+    this.audioBeep.pause();
+    this.audioBeep.currentTime = 0;
   }
 
   setTimerState(state) {
@@ -312,8 +315,8 @@ class Timer extends React.Component {
     this.setTimerState(new InitialState());
 
     // TODO: Timer should display zero before sounding alarm
-    // TODO: Sound alarm
-    console.log('*** SOUND ALARM ***');
+    console.log('*** PLAY AUDIO ***');
+    this.audioBeep.play();
   }
 
   tickPhase(remaining) {
@@ -388,6 +391,14 @@ class Timer extends React.Component {
             <TimerAlarm alarm={this.state.alarm} />
           </div>
         </div>
+
+        <audio
+          controls
+          id="beep"
+          preload="auto"
+          src="https://goo.gl/65cBl1"
+          ref={(audio) => { this.audioBeep = audio; }} />
+
         <hr />
 
       </div>
@@ -477,8 +488,7 @@ class TimerAlarm extends React.Component {
 }
 
 
-/*** GENERIC CONTROLS ***/
-
+/*** Generic Components ***/
 
 // IntegerControl Component
 // - props.title
