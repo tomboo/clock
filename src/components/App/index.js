@@ -49,6 +49,8 @@ import Navigation from '../Navigation';
 import AlarmPage from '../AlarmPage';
 import StopwatchPage from '../StopwatchPage';
 import TimerPage from '../TimerPage';
+import PomodoroPage from '../PomodoroPage';
+import SettingsPage from '../SettingsPage';
 
 import * as ROUTES from '../../constants/routes';
 
@@ -62,6 +64,8 @@ const App = () => (
     <Route path={ROUTES.ALARM} component={AlarmPage} />
     <Route path={ROUTES.STOPWATCH} component={StopwatchPage} />
     <Route path={ROUTES.TIMER} component={TimerPage} />
+    <Route path={ROUTES.POMODORO} component={PomodoroPage} />
+    <Route path={ROUTES.SETTINGS} component={SettingsPage} />
   </Router>
 );
 

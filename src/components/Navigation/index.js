@@ -14,6 +14,12 @@ const Navigation = () => (
             <li>
                 <Link to={ROUTES.TIMER}>Timer</Link>
             </li>
+            <li>
+                <Link to={ROUTES.POMODORO}>Pomodoro</Link>
+            </li>
+            <li>
+                <Link to={ROUTES.SETTINGS}>Settings</Link>
+            </li>
         </ul>
     </div>
 );
