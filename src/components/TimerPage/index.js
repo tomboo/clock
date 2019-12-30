@@ -1,7 +1,8 @@
 import React from 'react';
 import CircularProgressBar from '../CircularProgressBar';
+import IntegerControl from '../IntegerControl';
 import Button from '../Button';
-import { clockify } from '../../utilities'
+import { clockify, fromMin, toMin } from '../../utilities'
 
 const STATE_INIT    = 'initial';
 const STATE_RUN     = 'run';
@@ -19,7 +20,7 @@ class TimerPage extends React.Component {
             timerID: 0,
 
             // current interval
-            duration: 10000,        // session length (mSec)
+            duration: fromMin(1),        // session length (mSec)
             remaining: 0,       // remaining time (mSec)
             start: 0,           // started session (mSec - epoch time)
             end: 0,             // session ending (mSec - epoch time)
@@ -29,7 +30,24 @@ class TimerPage extends React.Component {
         this.onStart = this.onStart.bind(this);
         this.onPause = this.onPause.bind(this);
         this.onResume = this.onResume.bind(this);
-     }
+
+        this.setLength = this.setLength.bind(this);
+    }
+
+    // Handle click on IntegerControl increment/decrement buttons
+    setLength(increment) {
+        if (this.state.timerState !== STATE_INIT) return;
+
+        let newLength = toMin(this.state.duration) + increment;
+        if (0 < newLength && newLength <= 60) {
+            newLength = fromMin(newLength);
+
+            this.setState({
+                duration: newLength,
+                remaining: newLength,
+            });
+        }
+    }
 
     onCancel() {
         this.stopTimer();
@@ -124,13 +142,24 @@ class TimerPage extends React.Component {
                     <h1>Timer</h1>
                 </div>
                 <hr />
+
                 <div className="row justify-content-center">
-                    <CircularProgressBar
-                        value={value}
-                        text={clockify(remaining)}
-                    />
-                </div>
+                    { (timerState === STATE_INIT) ? (
+                        <IntegerControl
+                            title="Duration (minutes)"
+                            value={this.state.duration}
+                            increment={() => this.setLength(+1)}
+                            decrement={() => this.setLength(-1)}
+                        />
+                   ) : (
+                        <CircularProgressBar
+                            value={value}
+                            text={clockify(remaining)}
+                        />
+                    )}
+                    </div>
                 <hr />
+
                 <div className="row justify-content-center">
                     <Button onClick={() => this.onCancel()} className="mr-1">
                         Cancel
@@ -152,8 +181,8 @@ class TimerPage extends React.Component {
                         </Button>
                     }
                 </div>
-                <hr />
-            </div>    
+                <hr /> 
+            </div> 
         );
-    };
+    }
 }
