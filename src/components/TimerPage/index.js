@@ -119,35 +119,40 @@ class TimerPage extends React.Component {
         const value = duration ? Math.floor(remaining / duration * 100) : 0;
 
         return (
-            <div>
-                <h1>TimerPage</h1>
-                <span>
+            <div className="container">
+                <div className="row justify-content-center">
+                    <h1>Timer</h1>
+                </div>
+                <hr />
+                <div className="row justify-content-center">
                     <CircularProgressBar
                         value={value}
                         text={clockify(remaining)}
                     />
-                </span>
-                <span>
-                    <Button onClick={() => this.onCancel()}>
+                </div>
+                <hr />
+                <div className="row justify-content-center">
+                    <Button onClick={() => this.onCancel()} className="mr-1">
                         Cancel
                     </Button>
 
                     { timerState === STATE_INIT && 
-                        <Button onClick={() => this.onStart()}>
+                        <Button onClick={() => this.onStart()} className="mr-1">
                             Start
                         </Button>
                     }
                     { timerState === STATE_RUN && 
-                        <Button onClick={() => this.onPause()}>
+                        <Button onClick={() => this.onPause()} className="mr-1">
                             Pause
                         </Button>
                     }
                     { timerState === STATE_PAUSE && 
-                        <Button onClick={() => this.onResume()}>
+                        <Button onClick={() => this.onResume()} className="mr-1">
                             Resume
                         </Button>
                     }
-                </span>
+                </div>
+                <hr />
             </div>    
         );
     };
