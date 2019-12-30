@@ -145,7 +145,7 @@ function toSec(ms) {
   
   // Timer Component
   // - Parent component
-  class PomodoroPage extends React.Component {
+  export default class PomodoroPage extends React.Component {
     constructor(props) {
       super(props);
   
@@ -488,5 +488,3 @@ function toSec(ms) {
       )
     }
   }
-
-export default PomodoroPage;
