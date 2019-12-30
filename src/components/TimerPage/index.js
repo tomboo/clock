@@ -1,6 +1,7 @@
 import React from 'react';
 import CircularProgressBar from '../CircularProgressBar';
 import Button from '../Button';
+import { clockify } from '../../utilities'
 
 const STATE_INIT    = 'initial';
 const STATE_RUN     = 'run';
@@ -9,7 +10,8 @@ const STATE_PAUSE   = 'pause';
 const INTERVAL = 1000;      // update interval (1 sec)
 
 // TimerPage Component
-export default class TimerPage extends React.Component {
+export default
+class TimerPage extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -122,6 +124,7 @@ export default class TimerPage extends React.Component {
                 <span>
                     <CircularProgressBar
                         value={value}
+                        text={clockify(remaining)}
                     />
                 </span>
                 <span>

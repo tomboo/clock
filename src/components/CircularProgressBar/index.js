@@ -12,7 +12,7 @@ class CircularProgressBar extends React.Component {
     const {
       sqSize,         // size of enclosing square
       strokeWidth,
-      value,          // percentage
+      value,          // percentage (0..100)
       text,           // optional text (default value + '%')
     } = this.props;
 
